@@ -29,13 +29,9 @@ public class MainActivity extends ActionBarActivity {
 
     //Menu options
     private static final int SIMPLE_COMP = Menu.FIRST;
-    private static final int WEIGHT_COMP = SIMPLE_COMP + 1;
-    // 1 for SIMPLE (by default), 2 for WEIGHTED
+    private static final int NORM_COMP = SIMPLE_COMP + 1;
+    // 1 for SIMPLE (by default), 2 for NORMALIZED TIME
     int comparsionMode=1;
-
-    //The weights to be used by the weighted comparison method. By default 50% each one
-    float weightTimes=50;
-    float weightBeats=50;
 
     HashMap<Integer,EventData> data;
 
@@ -142,7 +138,6 @@ public class MainActivity extends ActionBarActivity {
                     //Normalize the new data
                     EventData ev = new EventData();
                     data=ev.simpleNormalizator(data);
-                    data=comparator.tempoNormalizator(data);
 
                     //Will return the value of the comparison. False by default
                     boolean matching = false;
@@ -152,8 +147,9 @@ public class MainActivity extends ActionBarActivity {
                             matching = comparator.SimpleComparator(threshold, data);
                             break;
                         case 2:
-                            //Let's compare using a improved comparison
-                            matching = comparator.PercentualComparator(threshold, data, weightBeats, weightTimes);
+                            //Let's compare using an improved comparison
+                            data=comparator.tempoNormalizator(data);
+                            matching = comparator.SimpleComparator(threshold, data);
                             break;
                     }
 
@@ -216,7 +212,7 @@ public class MainActivity extends ActionBarActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         menu.removeItem(R.id.action_settings);
         menu.add(0, SIMPLE_COMP, 0, "Simple Comparison");
-        menu.add(0, WEIGHT_COMP, 0, "Weighted Comparison");
+        menu.add(0, NORM_COMP, 0, "Normalized Comparison");
         return true;
     }
 
@@ -235,11 +231,10 @@ public class MainActivity extends ActionBarActivity {
                 toast.show();
                 return true;
 
-            case (WEIGHT_COMP):
+            case (NORM_COMP):
                 comparsionMode=2;
-                Toast toast2 = Toast.makeText(this, "WEIGHTED COMPARISON IS USED!", Toast.LENGTH_SHORT);
+                Toast toast2 = Toast.makeText(this, "BINARY NORMALIZED COMPARISON IS USED!", Toast.LENGTH_SHORT);
                 toast2.show();
-                showCustomDialog();
                 return true;
 /*
             case (R.id.action_settings):
@@ -249,9 +244,7 @@ public class MainActivity extends ActionBarActivity {
 */
             default:
                 return super.onOptionsItemSelected(item);
-
         }
-
     }
 
     //Records the event and from where (which square) it comes (id)
@@ -304,113 +297,6 @@ public class MainActivity extends ActionBarActivity {
         //System.out.printf("Sound #: %d \n", soundPathId);
         if (loaded)
             soundpool.play(soundPathId, volume, volume, 0, 0, 0);
-    }
-
-
-    //To let user decide weights to use with WEIGHTED COMPARISON
-    protected void showCustomDialog() {
-        final Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_edit);
-
-        final EditText editTextBeats = (EditText) dialog.findViewById(R.id.editTextBeat);
-        editTextBeats.setText(String.valueOf(weightBeats));
-        final EditText editTextTime = (EditText) dialog.findViewById(R.id.editTextTime);
-        editTextTime.setText(String.valueOf(weightTimes));
-
-        Button buttonSet = (Button) dialog.findViewById(R.id.buttonSet);
-        Button buttonCancel = (Button) dialog.findViewById(R.id.buttonCancel);
-
-
-        editTextBeats.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                float timeValue;
-                float actualValue;
-                String newValue;
-
-                if (s.length() > 0) {
-                    actualValue = Float.parseFloat(s.toString());
-                    if (actualValue > 100)
-                        actualValue = 100;
-
-                    try {
-                        timeValue = Float.parseFloat(editTextTime.getText().toString());
-                        if (timeValue + actualValue > 100) {
-                            newValue = (String.valueOf(100 - actualValue));
-                            editTextTime.setText(newValue);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        });
-
-        editTextTime.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                float actualValue;
-                float beatValue;
-                String newValue;
-
-                if (s.length() > 0) {
-                    actualValue = Float.parseFloat(s.toString());
-                    if (actualValue > 100)
-                        actualValue = 100;
-
-                    try {
-                        //beatValue = Float.parseFloat(editTextBeats.getText().toString());
-                        //if (actualValue + beatValue > 100) {
-                            newValue = (String.valueOf(100 - actualValue));
-                            editTextBeats.setText(newValue);
-                        //}
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        });
-
-        buttonSet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Updates the new weight values
-                weightBeats= Float.parseFloat(editTextBeats.getText().toString());
-                weightTimes= Float.parseFloat(editTextTime.getText().toString());
-                dialog.dismiss();
-            }
-        });
-
-        buttonCancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
     }
 
 }
